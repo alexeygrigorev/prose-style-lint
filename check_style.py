@@ -55,9 +55,11 @@ ANAPHORIC_NO_RE = re.compile(
 )
 # Label-colon paragraph openers: "The problem: ...", "Goal: ...",
 # "Three reasons: ...". Polish.md explains: use colons only to introduce
-# lists, not to label a chunk of prose.
+# lists, not to label a chunk of prose. Requires 2+ words after the
+# colon so single-link references like "Code: [notebook.ipynb](url)"
+# don't trip the rule.
 LABEL_COLON_OPENER_RE = re.compile(
-    r"^(?:The\s+)?[A-Z][a-zA-Z]+(?:\s+[A-Za-z]+){0,2}:\s+\w"
+    r"^(?:The\s+)?[A-Z][a-zA-Z]+(?:\s+[A-Za-z]+){0,2}:\s+\w+\s+\w"
 )
 # Filler sentence-openers: "Now", "Let's", "Let us". Fine in moderation,
 # overuse signals lazy transitions. Flagged at file scope when too many
