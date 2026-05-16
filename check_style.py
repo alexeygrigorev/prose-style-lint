@@ -794,6 +794,16 @@ def check_page(root: Path, path: Path) -> list[Finding]:
         elif BLOCKQUOTE_RE.match(line) or line.startswith("|"):
             flush_paragraph()
             seen_prose_since_heading = True
+            if BLOCKQUOTE_RE.match(line):
+                # Blockquotes are verbatim quoted material (testimonials,
+                # citations). Skip prose-level checks.
+                continue
+            # Table rows hold data (cells with names, dates, URLs,
+            # descriptions). The 'tables are not used' finding still
+            # fires above on the line.startswith('|') branch; here we
+            # skip prose-level inline checks on cell content.
+            errors.append(Finding(rel, line_no, Tag.TABLES, "markdown tables are not used"))
+            continue
         else:
             seen_prose_since_heading = True
             paragraph_lines.append((line_no, stripped))
@@ -805,8 +815,6 @@ def check_page(root: Path, path: Path) -> list[Finding]:
             errors.append(Finding(rel, line_no, Tag.BOLD, "bold markdown is not used"))
         if ITALIC_RE.search(plain):
             errors.append(Finding(rel, line_no, Tag.ITALIC, "italic markdown is not used"))
-        if line.startswith("|"):
-            errors.append(Finding(rel, line_no, Tag.TABLES, "markdown tables are not used"))
         if line.strip() == "---":
             errors.append(Finding(rel, line_no, Tag.HR, "horizontal rules are not used"))
         if "—" in line:
@@ -858,9 +866,11 @@ def check_page(root: Path, path: Path) -> list[Finding]:
 
         # Skip URL checks on HTML-tag lines (e.g., <a href="..."> or
         # <img src="..."> for video thumbnails). URLs inside HTML
-        # attributes are not prose URLs.
+        # attributes are not prose URLs. Same for table rows (data
+        # tables often have a dedicated URL column).
         line_is_html = line.lstrip().startswith("<")
-        if BARE_URL_RE.search(plain) and not line_is_html:
+        line_is_table = line.lstrip().startswith("|")
+        if BARE_URL_RE.search(plain) and not line_is_html and not line_is_table:
             errors.append(Finding(rel, line_no, Tag.BARE_URL, "bare URL in prose; use [name](url)"))
         if ANGLE_URL_RE.search(line) and not line_is_html:
             errors.append(Finding(rel, line_no, Tag.ANGLE_URL, "angle-bracket URL form not used; use [name](url)"))
