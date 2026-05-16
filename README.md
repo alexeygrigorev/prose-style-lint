@@ -3,6 +3,27 @@
 Voice, formatting, and code-style rules for technical write-ups, plus a
 mechanical checker that catches the worst offenders.
 
+## Install
+
+```bash
+uv tool install git+https://github.com/alexeygrigorev/prose-style-lint
+```
+
+Or from a local clone:
+
+```bash
+git clone https://github.com/alexeygrigorev/prose-style-lint ~/git/prose-style-lint
+uv tool install --from ~/git/prose-style-lint prose-style-lint
+```
+
+Then run:
+
+```bash
+prose-style-lint docs/
+prose-style-lint --list-tags
+prose-style-lint --ignore tables docs/
+```
+
 ## What's here
 
 - `voice.md` - tone, voice rules, content rules (include/leave out).

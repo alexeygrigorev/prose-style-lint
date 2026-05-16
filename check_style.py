@@ -22,6 +22,8 @@ from pathlib import Path
 import re
 import sys
 
+from version import __version__
+
 
 class Tag(str, Enum):
     """All rule tags emitted by the linter. The string value is what
@@ -362,6 +364,11 @@ def parse_args() -> argparse.Namespace:
         "--list-tags",
         action="store_true",
         help="Print all known rule tags and exit.",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"prose-style-lint {__version__}",
     )
     return parser.parse_args()
 
@@ -718,7 +725,6 @@ def check_page(root: Path, path: Path) -> list[Finding]:
                 if (
                     code_block_start is not None
                     and code_block_line_count > CODE_BLOCK_MAX_LINES
-                    and code_lang not in ("mermaid", "")
                 ):
                     errors.append(Finding(
                         rel, code_block_start, Tag.CODE_TOO_LONG,
