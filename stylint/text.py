@@ -4,11 +4,15 @@ import re
 
 from .patterns import (
     ABBREVIATION_RE,
+    CLAUSE_MARKER_RE,
+    COLON_BEFORE_COMMAS_RE,
     GERUND_LINE_START_RE,
     GERUND_MIDLINE_RE,
     GERUND_NOUN_EXCEPTIONS,
     LINK_RE,
+    OPEN_ENUM_TAIL_RE,
     SENTENCE_END_RE,
+    TERMINAL_AND_OR_RE,
 )
 
 
@@ -50,6 +54,40 @@ def split_sentences(text: str) -> list[str]:
 def count_words(text: str) -> int:
     """Count whitespace-delimited tokens that contain at least one word char."""
     return sum(1 for token in text.split() if re.search(r"\w", token))
+
+
+def classify_long_with_commas(sentence: str) -> str:
+    """Classify a long sentence containing commas.
+
+    Returns one of:
+      - 'inline-ok' when the sentence ends in an open enumeration
+        ('..., and others' / 'etc.') and the writer intentionally
+        left the list open. Don't flag at all in that case.
+      - 'list' when the commas separate items: a colon precedes the
+        commas, OR the sentence closes with 'and X' / 'or X' over a
+        run of 3+ chunks.
+      - 'clause' when the commas separate clauses: a subordinating /
+        coordinating conjunction follows a comma (which, that, while,
+        because, but, however, so, when, if, then, ...).
+      - 'clause' is also the safe default when none of the above match,
+        because splitting into shorter sentences never destroys meaning
+        but bulleting a clause chain does.
+
+    The user-facing rule (in error messages) is the parallel-completion
+    test: can you write a single lead-in line that all items finish
+    without re-introducing the subject or verb? This classifier is just
+    a hint about which side the sentence likely lands on.
+    """
+    s = sentence.strip()
+    if OPEN_ENUM_TAIL_RE.search(s):
+        return "inline-ok"
+    if CLAUSE_MARKER_RE.search(s):
+        return "clause"
+    if COLON_BEFORE_COMMAS_RE.search(s):
+        return "list"
+    if TERMINAL_AND_OR_RE.search(s) and s.count(",") >= 2:
+        return "list"
+    return "clause"
 
 
 def find_gerund_starts(plain: str) -> list[str]:

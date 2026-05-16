@@ -47,7 +47,9 @@ class Tag(str, Enum):
     # Paragraph / sentence shape
     PARAGRAPH_TOO_LONG = "paragraph-too-long"
     LONG_SENTENCE = "long-sentence"
-    LONG_AND_COMMAS = "long-and-commas"
+    # Long sentence with commas, split by likely fix shape:
+    LONG_LIST_LIKELY = "long-list-likely"
+    LONG_CLAUSE_LIKELY = "long-clause-likely"
     MANY_COMMAS = "many-commas"
     COLON_INLINE = "colon-inline"
     PARALLEL_SENTENCES = "parallel-sentences"

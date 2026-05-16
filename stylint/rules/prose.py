@@ -8,6 +8,7 @@ from ..patterns import (
     LIST_HEURISTIC_HINT,
     PARAGRAPH_MAX_SENTENCES,
     PARAGRAPH_QUESTION_OPENER_RE,
+    PARALLEL_COMPLETION_TEST,
     PARALLEL_SENTENCE_MIN_RUN,
     SENTENCE_MAX_COMMAS,
     SENTENCE_MAX_WORDS,
@@ -19,6 +20,7 @@ from ..patterns import (
 from ..models import Finding
 from ..tags import Tag
 from ..text import (
+    classify_long_with_commas,
     count_sentences,
     count_words,
     find_gerund_starts,
@@ -78,16 +80,38 @@ def check_paragraph(paragraph_lines: list[tuple[int, str]], rel) -> tuple[list[F
         too_many_commas = commas > SENTENCE_MAX_COMMAS
         if too_long and commas > 0:
             comma_word = "comma" if commas == 1 else "commas"
-            findings.append(
-                Finding(
-                    rel,
-                    start_line,
-                    Tag.LONG_AND_COMMAS,
-                    f"sentence has {word_count} words and {commas} {comma_word}. "
-                    "Fixes: (1) split into shorter sentences; (2) convert to a bullet list. "
-                    f"{LIST_HEURISTIC_HINT}",
+            shape = classify_long_with_commas(sentence)
+            if shape == "inline-ok":
+                # Open enumeration (..., and others / etc.) - the
+                # writer signalled the list is intentionally inline.
+                # Don't flag.
+                pass
+            elif shape == "list":
+                findings.append(
+                    Finding(
+                        rel,
+                        start_line,
+                        Tag.LONG_LIST_LIKELY,
+                        f"sentence has {word_count} words and {commas} {comma_word}, "
+                        "and the commas look like enumeration (colon or 'and X' closer). "
+                        "Fix: convert the items to a bullet list. "
+                        f"{PARALLEL_COMPLETION_TEST} {LIST_HEURISTIC_HINT}",
+                    )
                 )
-            )
+            else:
+                findings.append(
+                    Finding(
+                        rel,
+                        start_line,
+                        Tag.LONG_CLAUSE_LIKELY,
+                        f"sentence has {word_count} words and {commas} {comma_word}, "
+                        "and the commas look like clause boundaries (subordinating "
+                        "conjunction, chain of actions, or mixed subjects). "
+                        "Fix: split into 2-3 shorter sentences; do NOT convert to "
+                        "bullets - that would break the meaning. "
+                        f"{PARALLEL_COMPLETION_TEST}",
+                    )
+                )
         elif too_long:
             findings.append(
                 Finding(

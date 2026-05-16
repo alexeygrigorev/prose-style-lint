@@ -278,6 +278,41 @@ LIST_HEURISTIC_HINT = (
     "'and others'/'and more'/'and so on', when commas are clausal "
     "(joining clauses, not items), or when inline reads fine."
 )
+# The parallel-completion test - the human-facing rule for deciding
+# between bullet list and sentence split. The classifier
+# (classify_long_with_commas in text.py) is just a hint; the rule below
+# is what an editor actually applies.
+PARALLEL_COMPLETION_TEST = (
+    "Test: can you write a single lead-in line that all the commas "
+    "finish without re-introducing the subject or verb? "
+    "Yes -> bullet list. "
+    "No -> split into 2-3 sentences."
+)
+# Open enumerations - "..., and others", "..., and so on", "etc.".
+# These signal the writer intentionally left the list open, so the
+# inline form is the right choice. Skip the long-and-commas fire here.
+OPEN_ENUM_TAIL_RE = re.compile(
+    r"(?:,\s+(?:and\s+)?(?:others|more|so\s+on)|\betc\.?)\s*[.!?]?\s*$",
+    re.IGNORECASE,
+)
+# Subordinating / coordinating conjunctions that appear AFTER a comma
+# and signal a clause boundary (not a list item). When any of these
+# follow a comma in a long-and-commas sentence, the right fix is a
+# sentence split - bullets would butcher the meaning.
+CLAUSE_MARKER_RE = re.compile(
+    r",\s+(?:which|that|who|whom|whose|while|though|although|because|"
+    r"since|but|however|so|when|if|then|after|before|where|whereas)\b",
+    re.IGNORECASE,
+)
+# Colon precedes the comma run: "X includes A, B, and C". Strong
+# signal the writer already framed the commas as enumeration.
+COLON_BEFORE_COMMAS_RE = re.compile(r":\s+[^,.;:!?\n]+,")
+# Terminal "and X" / "or X" closing an enumeration. Combined with 3+
+# comma chunks, this is a list-shape closer.
+TERMINAL_AND_OR_RE = re.compile(
+    r",\s+(?:and|or)\s+[A-Za-z][^.!?\n]*[.!?]?\s*$",
+    re.IGNORECASE,
+)
 ABBREVIATION_RE = re.compile(
     r"\b(?:e\.g|i\.e|etc|vs|cf|Mr|Mrs|Ms|Dr|St|Jr|Sr|U\.S|U\.K|a\.m|p\.m|Inc|Ltd|Co)\.",
     re.IGNORECASE,

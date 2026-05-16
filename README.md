@@ -6,14 +6,14 @@ mechanical checker that catches the worst offenders.
 ## Install
 
 ```bash
-uv tool install git+https://github.com/alexeygrigorev/prose-style-lint
+uv tool install git+https://github.com/alexeygrigorev/stylint
 ```
 
 Or from a local clone:
 
 ```bash
-git clone https://github.com/alexeygrigorev/prose-style-lint ~/git/prose-style-lint
-uv tool install --from ~/git/prose-style-lint stylint
+git clone https://github.com/alexeygrigorev/stylint ~/git/stylint
+uv tool install --from ~/git/stylint stylint
 ```
 
 Then run:
@@ -58,7 +58,7 @@ Suppress specific rules with `--ignore`:
 
 ```bash
 stylint --ignore tables docs/
-stylint --ignore tables,long-and-commas docs/
+stylint --ignore tables,long-clause-likely docs/
 stylint --list-tags
 ```
 
@@ -143,7 +143,15 @@ can pass that tag to `--ignore`.
 
 - `paragraph-too-long` - paragraph with more than 5 sentences.
 - `long-sentence` - sentence over 20 words, no commas.
-- `long-and-commas` - sentence over 20 words and contains commas.
+- `long-list-likely` - sentence over 20 words with commas where a colon
+  precedes the commas or the sentence closes with `and X` / `or X` over
+  3+ chunks. The commas look like enumeration. Fix: convert to a bullet
+  list.
+- `long-clause-likely` - sentence over 20 words with commas where the
+  commas look like clause boundaries (subordinating conjunctions like
+  `which`, `that`, `while`, `because`, `but`, `however`, `so`, `when`,
+  or chains of actions with mixed subjects). Fix: split into 2-3 shorter
+  sentences. Do NOT bullet — it would break the meaning.
 - `many-commas` - sentence with more than 3 commas.
 - `colon-inline` - colon followed by 3+ comma-separated items and a
   terminal `and`/`or` (likely should be a bullet list).
@@ -176,7 +184,7 @@ can pass that tag to `--ignore`.
 The simplest setup is a pre-commit hook. From the target project root:
 
 ```bash
-ln -s ~/git/prose-style-lint/check_style.py .git/hooks/post-add-style-check
+ln -s ~/git/stylint/check_style.py .git/hooks/post-add-style-check
 ```
 
 Or run it from CI:

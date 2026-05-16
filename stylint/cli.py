@@ -27,7 +27,7 @@ def parse_args() -> argparse.Namespace:
         metavar="TAGS",
         help=(
             "Comma-separated rule tags to suppress "
-            "(e.g. --ignore tables,long-and-commas). Run with --list-tags "
+            "(e.g. --ignore tables,long-clause-likely). Run with --list-tags "
             "to see all known tags."
         ),
     )
@@ -53,7 +53,19 @@ def main() -> int:
         return 0
 
     valid_tags = {t.value for t in Tag}
-    ignore_list = [t.strip() for t in args.ignore.split(",") if t.strip()]
+    # Backwards-compat: the single 'long-and-commas' tag was split into
+    # two (long-list-likely and long-clause-likely). Accept the old name
+    # as an alias that expands to both.
+    tag_aliases = {
+        "long-and-commas": ("long-list-likely", "long-clause-likely"),
+    }
+    raw = [t.strip() for t in args.ignore.split(",") if t.strip()]
+    ignore_list: list[str] = []
+    for t in raw:
+        if t in tag_aliases:
+            ignore_list.extend(tag_aliases[t])
+        else:
+            ignore_list.append(t)
     unknown = [t for t in ignore_list if t not in valid_tags]
     if unknown:
         print(f"Unknown tag(s) for --ignore: {', '.join(unknown)}", file=sys.stderr)

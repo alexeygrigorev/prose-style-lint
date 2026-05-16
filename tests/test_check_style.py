@@ -9,6 +9,7 @@ from check_style import (
     count_sentences,
     find_gerund_starts,
 )
+from stylint.text import classify_long_with_commas
 
 
 def make_page(tmp_path: Path, body: str, name: str = "01-page.md") -> tuple[Path, Path]:
@@ -492,6 +493,100 @@ def test_gerund_leading_sentence_negative(tmp_path):
     root, page = make_page(tmp_path, "Spring loaded values appear here.\n")
     errors = check_page(root, page)
     assert not any("sentence opens with '-ing'" in e for e in errors)
+
+
+# ---------------------------------------------------------------------------
+# Long-with-commas classifier
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "sentence, expected",
+    [
+        # Colon-introduced enumeration with terminal "and X" -> list.
+        (
+            "Five sponsors back the course: MongoDB, Comet, Opik, Unsloth and ZenML.",
+            "list",
+        ),
+        # "and X" closer over 3+ chunks, no clause markers -> list.
+        (
+            "He created MongoDB, Comet, and Opik in a single afternoon.",
+            "list",
+        ),
+        # Chain of actions with "which" relative clause -> clause.
+        (
+            "Claude segmented the image, converted each piece to SVG, and assembled the result, which Codex later refined.",
+            "clause",
+        ),
+        # "but"/"because" between commas -> clause.
+        (
+            "The build was solid, but deployment is the missing piece, because RAG was bolted on later.",
+            "clause",
+        ),
+        # Open enumeration -> inline-ok (don't flag at all).
+        (
+            "The course covers Python, SQL, Docker, and others.",
+            "inline-ok",
+        ),
+        (
+            "We use numpy, pandas, scikit-learn, etc.",
+            "inline-ok",
+        ),
+        # No colon, no clause markers, no terminal and/or -> default
+        # clause (safer to split than to bullet).
+        (
+            "Tasks would fail, the process would stop, things would break.",
+            "clause",
+        ),
+        # "then" between commas -> clause (sequential actions).
+        (
+            "I went to the store, then bought milk, then came home with the groceries.",
+            "clause",
+        ),
+        # "while" -> clause.
+        (
+            "We trained the model, while the data team prepared the next batch, and shipped the result.",
+            "clause",
+        ),
+    ],
+)
+def test_classify_long_with_commas(sentence, expected):
+    assert classify_long_with_commas(sentence) == expected
+
+
+def test_long_list_likely_fires_on_colon_enumeration(tmp_path):
+    body = (
+        "The course covers a fairly wide range of related technologies "
+        "all across the upcoming year: MongoDB, Comet, Opik, Unsloth "
+        "and ZenML.\n"
+    )
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert any("long-list-likely" in e for e in errors)
+    assert not any("long-clause-likely" in e for e in errors)
+
+
+def test_long_clause_likely_fires_on_chain(tmp_path):
+    body = (
+        "Claude segmented the original image into many smaller pieces, "
+        "converted each piece individually, then assembled the result, "
+        "which Codex later refined further.\n"
+    )
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert any("long-clause-likely" in e for e in errors)
+    assert not any("long-list-likely" in e for e in errors)
+
+
+def test_open_enumeration_does_not_fire(tmp_path):
+    body = (
+        "The library handles a wide range of common file types "
+        "like CSV, Parquet, JSON, Avro, and others.\n"
+    )
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert not any("long-list-likely" in e for e in errors)
+    assert not any("long-clause-likely" in e for e in errors)
 
 
 # ---------------------------------------------------------------------------

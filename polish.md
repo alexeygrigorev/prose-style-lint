@@ -233,6 +233,41 @@ paragraph of explanation to land, pull it out of the list into
 prose, give it its own short paragraph or subsection, and leave the
 list to the items that actually fit a one-line form.
 
+## List vs sentence split: the parallel-completion test
+
+When the linter flags a long sentence with commas, the question is
+whether to convert the commas into bullets or split the sentence into
+shorter sentences. Use this test:
+
+> Can you write a single lead-in line that all the items finish
+> without re-introducing the subject or verb?
+
+If yes, it is a list:
+
+> Five sponsors back the course: MongoDB, Comet, Opik, Unsloth and
+> ZenML.
+
+Each item completes "Five sponsors back the course: ___" without
+needing its own subject or verb. Convert to bullets.
+
+If no, it is a sentence chain:
+
+> Claude segmented the image, converted each piece to SVG, then
+> assembled the result, which Codex later refined.
+
+There is no single lead-in that all four chunks finish - they share a
+subject but each adds its own action, and the last one is a relative
+clause about the result. Split into two sentences. Bulleting a chain
+of actions is the most common way to make prose feel robotic.
+
+The `long-list-likely` and `long-clause-likely` tags are the linter's
+guess at which side a finding lands on, based on signals like a colon
+before the commas or a subordinating conjunction after one. The
+parallel-completion test is the actual rule.
+
+Skip the rule entirely when the writer signalled an open enumeration
+("and others", "and so on", "etc."). Those are intentionally inline.
+
 ## Anti-duplication when expanding an overview
 
 When the overview lists bullets and the body then expands each one,
