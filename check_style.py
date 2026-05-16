@@ -118,7 +118,8 @@ SMART_QUOTES = {
 }
 BARE_URL_RE = re.compile(r"\bhttps?://")
 ANGLE_URL_RE = re.compile(r"<https?://")
-DOUBLE_HYPHEN_RE = re.compile(r"(?<!<)(?<!/)--(?!/)(?!>)")
+DOUBLE_HYPHEN_RE = re.compile(r"(?<![<!/])--(?![/>])")
+FOOTNOTE_DEF_RE = re.compile(r"^\s*\[\^[^\]]+\]:")
 DASH_PARENTHETICAL_RE = re.compile(
     r"[a-zA-Z]\s+-\s+.*?\s+-\s+[a-zA-Z]"
 )
@@ -751,6 +752,10 @@ def check_page(root: Path, path: Path) -> list[Finding]:
                         "double blank line in code; use one blank line between definitions",
                     ))
                 previous_code_line_blank = line.strip() == ""
+            continue
+
+        if FOOTNOTE_DEF_RE.match(line):
+            flush_paragraph()
             continue
 
         if HEADING_RE.match(line):
