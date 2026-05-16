@@ -432,6 +432,10 @@ def strip_link_urls(line: str) -> str:
     return LINK_RE.sub(lambda match: match.group(1), line)
 
 
+def strip_double_quoted(line: str) -> str:
+    return re.sub(r'"[^"]*"', "", line)
+
+
 CODE_BLOCK_MAX_LINES = 40
 HEADING_RE = re.compile(r"^#{1,6}\s")
 LIST_RE = re.compile(r"^\s*[-*]\s|^\s*\d+\.\s")
@@ -820,7 +824,7 @@ def check_page(root: Path, path: Path) -> list[Finding]:
         for match in LINK_RE.finditer(line):
             if "`" in match.group(1):
                 errors.append(Finding(rel, line_no, Tag.BACKTICKS_IN_LINK, "do not put backticks inside link text"))
-        if "Alexey" in plain:
+        if "Alexey" in strip_double_quoted(plain):
             errors.append(Finding(rel, line_no, Tag.THIRD_PERSON, "avoid third-person presenter references"))
         if ANAPHORIC_NO_RE.search(plain):
             errors.append(Finding(
