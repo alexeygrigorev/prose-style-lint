@@ -23,14 +23,14 @@ mechanical checker that catches the worst offenders. Lifted out of
 Scan the current directory:
 
 ```bash
-python3 ~/git/prose-style/check_style.py
+python3 ~/git/prose-style-lint/check_style.py
 ```
 
 Scan one file or a specific folder:
 
 ```bash
-python3 ~/git/prose-style/check_style.py path/to/post.md
-python3 ~/git/prose-style/check_style.py docs/
+python3 ~/git/prose-style-lint/check_style.py path/to/post.md
+python3 ~/git/prose-style-lint/check_style.py docs/
 ```
 
 To skip files, drop a `.prose-style-ignore` at the scan root, one
@@ -57,13 +57,13 @@ docs/api/*
 The simplest setup is a pre-commit hook. From the target project root:
 
 ```bash
-ln -s ~/git/prose-style/check_style.py .git/hooks/post-add-style-check
+ln -s ~/git/prose-style-lint/check_style.py .git/hooks/post-add-style-check
 ```
 
 Or run it from CI:
 
 ```yaml
-- run: python3 ~/git/prose-style/check_style.py docs/
+- run: python3 ~/git/prose-style-lint/check_style.py docs/
 ```
 
 ## Notes on what's enforced vs. what's judgment
