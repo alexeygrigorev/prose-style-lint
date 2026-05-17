@@ -53,9 +53,11 @@ class Tag(str, Enum):
     MANY_COMMAS = "many-commas"
     COLON_INLINE = "colon-inline"
     PARALLEL_SENTENCES = "parallel-sentences"
+    CHOPPY_RHYTHM = "choppy-rhythm"
     LABEL_COLON = "label-colon"
     META_FRAMING = "meta-framing"
     QUESTION_OPENER = "question-opener"
+    REPEATED_AND = "repeated-and"
     # File-level
     NOW_LETS_OVERUSE = "now-lets-overuse"
     NOW_LETS_COMBO = "now-lets-combo"

@@ -157,6 +157,15 @@ can pass that tag to `--ignore`.
   terminal `and`/`or` (likely should be a bullet list).
 - `parallel-sentences` - 3+ adjacent sentences sharing the same 1-2
   word opener (e.g. `Maybe it should... Maybe it should...`).
+- `choppy-rhythm` - 3+ adjacent sentences of 9 words or fewer. The
+  staccato rhythm reads worse than one or two joined sentences. Fix:
+  combine two of them with a conjunction ("so", "because", "and",
+  "but") or restructure as a single longer sentence.
+- `repeated-and` - polysyndetic chain ("A and B and C") of 3+ items
+  joined by `and` instead of the oxford comma form. Fix: use commas
+  with `and` only between the last two items. Idioms like "more and
+  more" or "date and time" only fire when embedded in a longer chain
+  ("X and more and more Y"); standalone uses don't trigger the rule.
 - `meta-framing` - sentence has the shape `[The/A/Another] <abstract
   noun> [of X] is that <claim>` (e.g. `A big advantage of Recorder is
   that it keeps recording`, `Another limitation is that...`, `The key

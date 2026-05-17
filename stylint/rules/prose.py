@@ -3,6 +3,8 @@
 from ..patterns import (
     ANAPHORIC_NO_RE,
     CALLOUT_LABELS,
+    CHOPPY_SENTENCE_MAX_WORDS,
+    CHOPPY_SENTENCE_MIN_RUN,
     COLON_INLINE_LIST_RE,
     LABEL_COLON_OPENER_RE,
     LIST_HEURISTIC_HINT,
@@ -10,6 +12,7 @@ from ..patterns import (
     PARAGRAPH_MAX_SENTENCES,
     PARAGRAPH_QUESTION_OPENER_RE,
     PARALLEL_COMPLETION_TEST,
+    REPEATED_AND_RE,
     PARALLEL_SENTENCE_MIN_RUN,
     SENTENCE_MAX_COMMAS,
     SENTENCE_MAX_WORDS,
@@ -167,6 +170,32 @@ def check_paragraph(paragraph_lines: list[tuple[int, str]], rel) -> tuple[list[F
                 )
             run_start = i
 
+    # Choppy rhythm: 3+ short sentences in a row read as staccato.
+    # "Or hand them a new task. I don't have a lot of free time.
+    # This is how I make more of it." -> combine: "I don't have a lot
+    # of free time, so this is how I make more of it."
+    short_flags = [count_words(s) <= CHOPPY_SENTENCE_MAX_WORDS for s in sentences]
+    short_run_start = 0
+    for i in range(1, len(short_flags) + 1):
+        in_run = i < len(short_flags) and short_flags[i]
+        if not in_run:
+            run_len = i - short_run_start
+            if run_len >= CHOPPY_SENTENCE_MIN_RUN and short_flags[short_run_start]:
+                findings.append(
+                    Finding(
+                        rel,
+                        start_line,
+                        Tag.CHOPPY_RHYTHM,
+                        f"{run_len} consecutive short sentences "
+                        f"(<= {CHOPPY_SENTENCE_MAX_WORDS} words each). "
+                        "The staccato rhythm reads worse than one or two joined "
+                        "sentences. Fix: combine two of them with a conjunction "
+                        "('so', 'because', 'and', 'but') or restructure as a "
+                        "single longer sentence.",
+                    )
+                )
+            short_run_start = i
+
     if LABEL_COLON_OPENER_RE.match(joined):
         label_before_colon = joined.split(":", 1)[0].strip().lower()
         if label_before_colon not in CALLOUT_LABELS:
@@ -268,6 +297,18 @@ def check_prose_line(plain: str, line_no: int, rel) -> tuple[list[Finding], list
                 "framing noun phrase and lead with the actual claim "
                 "('A big advantage of Recorder is that it keeps recording' -> "
                 "'Recorder keeps recording').",
+            )
+        )
+    for match in REPEATED_AND_RE.finditer(plain):
+        findings.append(
+            Finding(
+                rel,
+                line_no,
+                Tag.REPEATED_AND,
+                f"polysyndetic chain '{match.group(0).strip()}': three or more "
+                "items joined by 'and' instead of commas. Fix: use the oxford "
+                "comma form ('Claude Code, Codex and OpenCode'). Keep the "
+                "repeated 'and' only when the rhythm is intentional (rare).",
             )
         )
     for match in NOW_LETS_OPENER_RE.finditer(plain):

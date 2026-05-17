@@ -667,6 +667,88 @@ def test_meta_framing_negative(body, tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Repeated-and / polysyndeton: "A and B and C"
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "I use Claude Code and Codex and OpenCode every day.\n",
+        "We tested numpy and pandas and scikit-learn together.\n",
+        "Lions and tigers and bears were everywhere.\n",
+        # Idiom inside a longer chain - still bad polysyndeton.
+        "I use Claude Code, but also more and more Codex and OpenCode.\n",
+        # Mixed clause with idiom inside - still bad.
+        "We saw less and less of the team and the customers.\n",
+    ],
+)
+def test_repeated_and_positive(body, tmp_path):
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert any("repeated-and" in e for e in errors), f"missed: {body!r}"
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        # Two items joined by 'and' - normal English.
+        "I use Claude Code and Codex every day.\n",
+        # Oxford comma form - the preferred shape.
+        "I use Claude Code, Codex and OpenCode.\n",
+        # 'and' inside a longer sentence with one occurrence only.
+        "We tested the model and then shipped the result.\n",
+        # 'more and more' standalone (only 1 'and' connector) - no chain.
+        "I am using more and more Codex over time.\n",
+        # 'date and time' standalone is a 2-item compound - no chain.
+        "Add date and time to the schedule.\n",
+    ],
+)
+def test_repeated_and_negative(body, tmp_path):
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert not any("repeated-and" in e for e in errors), f"false positive: {body!r}"
+
+
+# ---------------------------------------------------------------------------
+# Choppy rhythm: 3+ short sentences in a row
+# ---------------------------------------------------------------------------
+
+
+def test_choppy_rhythm_positive(tmp_path):
+    body = (
+        "I keep going. Or hand them a new task. "
+        "I don't have a lot of free time. "
+        "This is how I make more of it.\n"
+    )
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert any("choppy-rhythm" in e for e in errors)
+
+
+def test_choppy_rhythm_negative_two_shorts(tmp_path):
+    # Two short sentences in a row: still acceptable, no fire.
+    body = (
+        "I keep going. It works fine. "
+        "Otherwise everything stays the same as it has been for the last several months.\n"
+    )
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert not any("choppy-rhythm" in e for e in errors)
+
+
+def test_choppy_rhythm_negative_after_join(tmp_path):
+    # User-style fix: combine two of them. No more choppy run.
+    body = (
+        "I keep going. Or hand them a new task. "
+        "I don't have a lot of free time, so this is how I make more of it.\n"
+    )
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert not any("choppy-rhythm" in e for e in errors)
+
+
+# ---------------------------------------------------------------------------
 # Smoke test: clean known-good page
 # ---------------------------------------------------------------------------
 

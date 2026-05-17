@@ -256,6 +256,14 @@ PYTHON_CHAINED_GET_RE = re.compile(r"\.get\([^)]*\)\.get\(")
 PARAGRAPH_MAX_SENTENCES = 5
 SENTENCE_MAX_WORDS = 20
 SENTENCE_MAX_COMMAS = 3
+# Choppy-rhythm threshold: a sentence with at most this many words
+# counts as "short". 3+ short sentences in a row become a staccato
+# rhythm ("Or hand them a new task. I don't have a lot of free time.
+# This is how I make more of it.") that reads worse than one or two
+# joined sentences ("I don't have a lot of free time, so this is how
+# I make more of it.").
+CHOPPY_SENTENCE_MAX_WORDS = 9
+CHOPPY_SENTENCE_MIN_RUN = 3
 SENTENCE_END_RE = re.compile(r"[.!?](?=[\s\"')\]]|$)")
 # Colon-introduced inline list with 3+ items and a terminal and/or.
 # "We use these tools: numpy, pandas, scikit-learn, and matplotlib" -
@@ -356,6 +364,18 @@ META_FRAMING_NOUNS = (
     r"hope|fear|"
     r"fact|truth|reality|thing|"
     r"key|core|gist|crux|essence"
+)
+REPEATED_AND_RE = re.compile(
+    # Three or more items joined by 'and' instead of the usual oxford
+    # comma: 'Claude Code and Codex and OpenCode' rather than
+    # 'Claude Code, Codex and OpenCode'. Each item is a 1-4 word token
+    # group (lowercased or proper noun). Catches polysyndetic chains
+    # users sometimes write to dodge the 'and X' list-classifier
+    # heuristic. Idioms ('more and more', 'date and time') still fire
+    # when they appear inside a longer chain - 'X and more and more Y'
+    # reads as bad as any other polysyndetic chain.
+    r"(?:\b[A-Za-z][\w.]*(?:\s+[A-Za-z][\w.]*){0,3}\s+and\s+){2,}"
+    r"[A-Za-z][\w.]*(?:\s+[A-Za-z][\w.]*){0,3}\b",
 )
 META_FRAMING_RE = re.compile(
     r"(?i)\b(?:the|a|an|another|one)\s+"
