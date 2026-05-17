@@ -17,8 +17,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/alexeygrigorev/prose-style-lint"
-Repository = "https://github.com/alexeygrigorev/prose-style-lint"
+Homepage = "https://github.com/alexeygrigorev/stylint"
+Repository = "https://github.com/alexeygrigorev/stylint"
 
 [project.scripts]
 stylint = "stylint.cli:main"

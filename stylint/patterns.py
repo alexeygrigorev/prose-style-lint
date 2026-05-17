@@ -291,10 +291,70 @@ PARALLEL_COMPLETION_TEST = (
 # Open enumerations - "..., and others", "..., and so on", "etc.".
 # These signal the writer intentionally left the list open, so the
 # inline form is the right choice. Skip the long-and-commas fire here.
+# Allow trailing footnote refs like [^12][^7] after the closer so the
+# rule still fires on cited prose.
 OPEN_ENUM_TAIL_RE = re.compile(
-    r"(?:,\s+(?:and\s+)?(?:others|more|so\s+on)|\betc\.?)\s*[.!?]?\s*$",
+    r"(?:,\s+(?:and\s+)?(?:others|more|so\s+on)|\betc\.?)"
+    r"(?:\s*\[\^[^\]]+\])*\s*[.!?]?\s*$",
     re.IGNORECASE,
 )
+# Footnote reference (Pandoc-style): [^1], [^abc]. Strip these before
+# classifying long-and-commas so they don't break end-of-sentence anchors.
+FOOTNOTE_REF_RE = re.compile(r"\[\^[^\]]+\]")
+# Action-chain detection: 2+ comma chunks that start with a transitive
+# verb sharing an elided subject ("you open X, pick Y, choose Z").
+# These look list-shaped but are sequential actions; bulleting them
+# reads as robotic. Classify as clause-likely so the fix is a split.
+ACTION_CHAIN_VERBS = (
+    r"pick|choose|select|find|get|take|give|send|receive|make|build|do|"
+    r"create|delete|remove|add|edit|modify|change|replace|update|"
+    r"click|press|type|drag|drop|copy|paste|save|load|"
+    r"run|execute|install|uninstall|configure|set|test|debug|fix|"
+    r"open|close|start|stop|end|finish|begin|continue|"
+    r"write|read|parse|format|convert|transform|fetch|store|"
+    r"ask|tell|say|show|hide|display|present|describe|explain|define|"
+    r"think|consider|decide|plan|design|"
+    r"deploy|ship|release|publish|"
+    r"use|try|keep|wait|move|"
+    r"correct|verify|validate|review|check"
+)
+ACTION_CHAIN_RE = re.compile(
+    # Match the verb stem optionally followed by -s (3rd person), -ed
+    # (past), or -ing (continuous), optionally preceded by a chunk
+    # connector like "and"/"or"/"then". Catches "..., and checks X",
+    # "..., extracts Y", "..., running Z".
+    rf",\s+(?:and\s+|or\s+|then\s+|also\s+)?"
+    rf"(?:{ACTION_CHAIN_VERBS})(?:s|es|ed|d|ing)?\s+",
+    re.IGNORECASE,
+)
+# Irregular past-tense action verbs at chunk start. These don't fit
+# the stem+suffix pattern above.
+IRREGULAR_PAST_RE = re.compile(
+    r",\s+(?:and\s+|or\s+|then\s+|also\s+)?"
+    r"(?:ran|went|came|took|made|gave|sent|got|saw|said|"
+    r"wrote|bought|sold|thought|brought|caught|taught|fought|sought|"
+    r"found|kept|left|met|paid|built|spent|held|told|drew|grew|"
+    r"knew|threw|flew|drove|broke|spoke|woke|chose|ate|drank|stole)\s+",
+    re.IGNORECASE,
+)
+# Generic verb-led chunk detector: a comma chunk that does NOT start
+# with a determiner/pronoun/preposition is likely verb-led. This
+# catches action chains the curated verb list misses (detects,
+# extracts, calculates, summarises, ...). Used as a fallback signal.
+NON_VERB_STARTERS = frozenset({
+    "a", "an", "the", "this", "that", "these", "those",
+    "my", "your", "his", "her", "its", "our", "their",
+    "some", "any", "no", "every", "each", "all", "both",
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    "another", "such", "many", "few", "much", "little", "most",
+    "of", "in", "on", "at", "to", "for", "by", "with", "from",
+    "into", "onto", "through", "around", "over", "under", "above",
+    "below", "between", "among", "during", "after", "before", "since",
+    "though", "although", "while", "because", "if", "when", "where",
+    "as", "than", "but", "or", "and", "so", "yet",
+    "which", "that", "who", "whom", "whose", "what", "whatever",
+    "however", "moreover", "additionally", "instead",
+})
 # Subordinating / coordinating conjunctions that appear AFTER a comma
 # and signal a clause boundary (not a list item). When any of these
 # follow a comma in a long-and-commas sentence, the right fix is a

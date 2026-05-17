@@ -548,6 +548,40 @@ def test_gerund_leading_sentence_negative(tmp_path):
             "We trained the model, while the data team prepared the next batch, and shipped the result.",
             "clause",
         ),
+        # Action chain with elided subject: looks like a list but reads
+        # as sequential actions. Should be clause-likely, not list.
+        (
+            "Today this is tedious - you open GitHub, pick the right project, choose an issue template, and describe everything by hand.",
+            "clause",
+        ),
+        # Verb-led chunks after a colon are also an action chain.
+        (
+            "As for the agent tools: you can ask questions about past entries, add new entries, correct entries if something is wrong.",
+            "clause",
+        ),
+        # Footnote refs at the end should not break the open-enum
+        # detector.
+        (
+            "Standard journaling means talking about events that happened in your life, listing three things you are proud of today, and so on[^10].",
+            "inline-ok",
+        ),
+        # Two-item colon sentence with one comma: bullet would be sparse,
+        # sentence split reads better. Default to clause.
+        (
+            "Two resources cover a new SEO challenge: how to get content cited by AI search engines, and how to track brand visibility.",
+            "clause",
+        ),
+        # 3rd-person -s verbs: "detects X, extracts Y, checks Z" -
+        # still an action chain, not a list of items.
+        (
+            "For each query, it calls the SearchAPI to retrieve search results, detects whether an AI Overview is present, extracts the cited domains, and checks whether the user's brand appears.",
+            "clause",
+        ),
+        # Irregular past tense: "ran X, then took Y, sent Z".
+        (
+            "I ran the script overnight, then took the output to the analyst, and sent the summary to the team the next morning.",
+            "clause",
+        ),
     ],
 )
 def test_classify_long_with_commas(sentence, expected):

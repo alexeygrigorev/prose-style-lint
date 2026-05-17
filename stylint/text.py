@@ -4,12 +4,16 @@ import re
 
 from .patterns import (
     ABBREVIATION_RE,
+    ACTION_CHAIN_RE,
     CLAUSE_MARKER_RE,
     COLON_BEFORE_COMMAS_RE,
+    FOOTNOTE_REF_RE,
     GERUND_LINE_START_RE,
     GERUND_MIDLINE_RE,
     GERUND_NOUN_EXCEPTIONS,
+    IRREGULAR_PAST_RE,
     LINK_RE,
+    NON_VERB_STARTERS,
     OPEN_ENUM_TAIL_RE,
     SENTENCE_END_RE,
     TERMINAL_AND_OR_RE,
@@ -56,6 +60,35 @@ def count_words(text: str) -> int:
     return sum(1 for token in text.split() if re.search(r"\w", token))
 
 
+def _verb_led_chunk_count(sentence: str) -> int:
+    """Count comma chunks (after the first) that start with a word not
+    in NON_VERB_STARTERS. Such chunks tend to be verb-led ('pick X',
+    'detects Y'). The first chunk is skipped because it usually carries
+    its own noun phrase and a finite verb."""
+    parts = sentence.split(",")
+    if len(parts) < 3:
+        return 0
+    count = 0
+    for chunk in parts[1:]:
+        # Strip leading connectors.
+        tokens = chunk.strip().split()
+        i = 0
+        while i < len(tokens) and tokens[i].lower() in {"and", "or", "then", "also"}:
+            i += 1
+        if i >= len(tokens):
+            continue
+        first = tokens[i].lower().strip(".,;:!?\"'")
+        if not first:
+            continue
+        # A leading capital usually signals a proper noun (list item),
+        # so skip those.
+        if tokens[i][0].isupper():
+            continue
+        if first not in NON_VERB_STARTERS:
+            count += 1
+    return count
+
+
 def classify_long_with_commas(sentence: str) -> str:
     """Classify a long sentence containing commas.
 
@@ -78,12 +111,32 @@ def classify_long_with_commas(sentence: str) -> str:
     without re-introducing the subject or verb? This classifier is just
     a hint about which side the sentence likely lands on.
     """
-    s = sentence.strip()
+    # Strip footnote refs so end-of-sentence anchors line up.
+    s = FOOTNOTE_REF_RE.sub("", sentence).strip()
     if OPEN_ENUM_TAIL_RE.search(s):
         return "inline-ok"
     if CLAUSE_MARKER_RE.search(s):
         return "clause"
-    if COLON_BEFORE_COMMAS_RE.search(s):
+    # Action chain: 2+ comma chunks led by a transitive verb with an
+    # elided subject ("you open X, pick Y, choose Z" or "detects X,
+    # extracts Y, checks Z" or "ran X, then took Y"). Looks like a
+    # list, reads as a sequence. Demote to clause.
+    action_hits = (
+        len(ACTION_CHAIN_RE.findall(s))
+        + len(IRREGULAR_PAST_RE.findall(s))
+    )
+    if action_hits >= 2:
+        return "clause"
+    # Fallback: chunks that don't begin with a determiner/pronoun/
+    # preposition (NON_VERB_STARTERS) are likely verb-led. If 2+ of
+    # the comma-separated chunks after the first start that way, it's
+    # an action chain. This catches verbs the curated list misses.
+    if _verb_led_chunk_count(s) >= 2:
+        return "clause"
+    # Colon-introduced enumeration: require 3+ chunks (2+ commas) so
+    # two-item "colon: A, and B" stays clause-likely. Two-item bullets
+    # feel sparse - splitting into two sentences reads better.
+    if COLON_BEFORE_COMMAS_RE.search(s) and s.count(",") >= 2:
         return "list"
     if TERMINAL_AND_OR_RE.search(s) and s.count(",") >= 2:
         return "list"

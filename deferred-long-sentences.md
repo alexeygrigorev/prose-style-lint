@@ -8,7 +8,7 @@ is `file:line [tag] summary`.
 
 52 `long-and-commas` findings deferred from earlier session.
 
-Run `python3 ~/git/prose-style-lint/check_style.py ~/git/llm-zoomcamp/`
+Run `python3 ~/git/stylint/check_style.py ~/git/llm-zoomcamp/`
 to regenerate the current list.
 
 ## telegram-writing-assistant (~/git/telegram-writing-assistant/articles/)
