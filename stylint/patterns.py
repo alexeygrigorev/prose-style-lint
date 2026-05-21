@@ -84,6 +84,7 @@ PARAGRAPH_QUESTION_OPENER_RE = re.compile(
 THIS_IS_WHAT_ABOUT_RE = re.compile(
     r"\b(?:This|That|It)\s+is\s+what\s+\w+(?:\s+\w+){0,3}\s+(?:is|are|was|were)\s+about\b"
 )
+THIS_IS_CODE_LEAD_IN_RE = re.compile(r"^This is\b.*:\s*$")
 
 # Lazy headings starting with "The X". Catches both the bare "## The
 # problem" and the suffix form "## The RAG idea" / "## The chunking
@@ -233,6 +234,18 @@ BANNED_PHRASES: dict[str, str] = {
     "suffer": "do not anthropomorphize - inanimate things don't suffer; "
                "describe what actually goes wrong "
                "('the answer is wrong', 'the latency doubles')",
+}
+
+# Regex banned phrases. Use these for phrasing families where exact
+# substring matching would miss the pattern.
+BANNED_PHRASE_PATTERNS: dict[str, tuple[re.Pattern[str], str]] = {
+    "the/a ... below": (
+        re.compile(
+            r"\b(?:the|a|an)\s+[\w`-]+(?:\s+[\w`-]+){0,3}\s+below\b",
+            re.IGNORECASE,
+        ),
+        "drop the forward reference; name the thing directly",
+    ),
 }
 
 # Sentence openers. Capitalized, must start the line (allowing optional list

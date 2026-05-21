@@ -26,7 +26,10 @@ def check_page(root: Path, path: Path) -> list[Finding]:
     # last flushed paragraph that was multi-sentence and ended with ':'
     # so we can fire `lead-in-multi` if the very next block is a list
     # or code fence.
-    flush_state: dict[str, int | None] = {"multi_colon_line": None}
+    flush_state: dict[str, int | None] = {
+        "multi_colon_line": None,
+        "this_is_code_lead_in_line": None,
+    }
     text = path.read_text()
     try:
         rel = path.relative_to(root)
@@ -61,6 +64,12 @@ def check_page(root: Path, path: Path) -> list[Finding]:
         findings, pending_multi_colon_line = check_paragraph(paragraph_lines, rel)
         errors.extend(findings)
         flush_state["multi_colon_line"] = pending_multi_colon_line
+        start_line = paragraph_lines[0][0]
+        joined = " ".join(text for _, text in paragraph_lines)
+        if THIS_IS_CODE_LEAD_IN_RE.match(joined):
+            flush_state["this_is_code_lead_in_line"] = start_line
+        else:
+            flush_state["this_is_code_lead_in_line"] = None
         paragraph_lines.clear()
 
     def emit_lead_in_multi_if_pending() -> None:
@@ -78,6 +87,17 @@ def check_page(root: Path, path: Path) -> list[Finding]:
         ))
         flush_state["multi_colon_line"] = None
 
+    def emit_this_is_code_lead_in_if_pending() -> None:
+        line_no = flush_state.get("this_is_code_lead_in_line")
+        if line_no is None:
+            return
+        errors.append(Finding(
+            rel, line_no, Tag.LEAD_IN,
+            "code lead-in starts with 'This is'; show the code first or name "
+            "the action directly",
+        ))
+        flush_state["this_is_code_lead_in_line"] = None
+
     for line_no, line in enumerate(lines, start=1 + line_offset):
         stripped = line.strip()
         starts_fence = line.lstrip().startswith("```")
@@ -94,6 +114,7 @@ def check_page(root: Path, path: Path) -> list[Finding]:
             flush_paragraph()
             if not in_code:
                 emit_lead_in_multi_if_pending()
+                emit_this_is_code_lead_in_if_pending()
             if not in_code:
                 fence_tail = line.lstrip()[3:].strip()
                 if not fence_tail:

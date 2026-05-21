@@ -140,6 +140,18 @@ def test_banned_phrase_single_line_negative(tmp_path):
     assert not any("banned phrase" in e for e in errors)
 
 
+def test_banned_phrase_pattern_below_positive(tmp_path):
+    root, page = make_page(tmp_path, "The type below matches that shape.\n")
+    errors = check_page(root, page)
+    assert any("[banned-phrase] 'the/a ... below'" in e for e in errors)
+
+
+def test_banned_phrase_pattern_below_negative(tmp_path):
+    root, page = make_page(tmp_path, "Below, run the command from the project root.\n")
+    errors = check_page(root, page)
+    assert not any("the/a ... below" in e for e in errors)
+
+
 # ---------------------------------------------------------------------------
 # Banned phrase, across lines
 # ---------------------------------------------------------------------------
@@ -313,6 +325,20 @@ def test_code_block_lead_in_required_negative(tmp_path):
     root, page = make_page(tmp_path, body)
     errors = check_page(root, page)
     assert not any("code block needs a lead-in" in e for e in errors)
+
+
+def test_this_is_code_lead_in_positive(tmp_path):
+    body = "## Section\n\nThis is the agent loop:\n\n```python\nprint('hi')\n```\n"
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert any("code lead-in starts with 'This is'" in e for e in errors)
+
+
+def test_this_is_code_lead_in_after_code_negative(tmp_path):
+    body = "## Section\n\nRun the command:\n\n```python\nprint('hi')\n```\n\nThis is the agent loop.\n"
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert not any("code lead-in starts with 'This is'" in e for e in errors)
 
 
 # ---------------------------------------------------------------------------
@@ -767,7 +793,7 @@ def test_clean_page_has_no_errors(tmp_path):
         "\n"
         "## Section\n"
         "\n"
-        "The list below names the steps we take.\n"
+        "Use this list for the steps we take.\n"
         "\n"
         "- first step\n"
         "- second step\n"
