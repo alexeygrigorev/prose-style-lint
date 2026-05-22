@@ -20,6 +20,7 @@ from ..patterns import (
     SHORT_LABEL_COLON_RE,
     THIS_IS_WHAT_ABOUT_RE,
     BANNED_PHRASES,
+    BANNED_PHRASE_PATTERNS,
     NOW_LETS_COMBO_RE,
     NOW_LETS_OPENER_RE,
 )
@@ -243,6 +244,22 @@ def check_paragraph(paragraph_lines: list[tuple[int, str]], rel) -> tuple[list[F
                         start_line,
                         Tag.BANNED_PHRASE,
                         f"'{phrase}' across lines - {hint}",
+                    )
+                )
+
+    for label, (pattern, hint) in BANNED_PHRASE_PATTERNS.items():
+        if pattern.search(joined):
+            already_flagged = any(
+                pattern.search(strip_inline_code(strip_link_urls(line)))
+                for _, line in paragraph_lines
+            )
+            if not already_flagged:
+                findings.append(
+                    Finding(
+                        rel,
+                        start_line,
+                        Tag.BANNED_PHRASE,
+                        f"'{label}' across lines - {hint}",
                     )
                 )
 

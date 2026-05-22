@@ -602,6 +602,37 @@ def test_clean_prose_no_format_flags(tmp_path):
         assert not any(needle in e for e in errors)
 
 
+def test_only_question_scaffold_flagged(tmp_path):
+    body = "The only question that matters is: what does `sim` actually compute?\n"
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert any("'the only question ... is'" in e for e in errors)
+
+
+def test_only_question_colon_scaffold_flagged(tmp_path):
+    body = "The only question: what does `sim` actually compute?\n"
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert any("'the only question ... is'" in e for e in errors)
+
+
+def test_only_question_scaffold_flagged_across_wrapped_lines(tmp_path):
+    body = (
+        "The only question that\n"
+        "matters is: what does `sim` actually compute?\n"
+    )
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert any("'the only question ... is' across lines" in e for e in errors)
+
+
+def test_plain_question_is_not_only_question_scaffold(tmp_path):
+    body = "The question is whether this similarity score is useful.\n"
+    root, page = make_page(tmp_path, body)
+    errors = check_page(root, page)
+    assert not any("'the only question ... is'" in e for e in errors)
+
+
 # ---------------------------------------------------------------------------
 # Bare URL in prose
 # ---------------------------------------------------------------------------

@@ -329,6 +329,14 @@ BANNED_PHRASE_PATTERNS: dict[str, tuple[re.Pattern[str], str]] = {
         ),
         "use 'give' or name the concrete result directly",
     ),
+    "the only question ... is": (
+        re.compile(
+            r"(?:^|[.!?]\s+)the\s+only\s+question\b"
+            r"(?:\s*:|(?:\s+[A-Za-z][\w-]*){0,8}\s+is\s*:)",
+            re.IGNORECASE,
+        ),
+        "drop the scaffolding; ask or state the question directly",
+    ),
     "content as actor": (
         re.compile(
             r"\b(?:the\s+)?(?:previous|next|current|this|that)?\s*"
