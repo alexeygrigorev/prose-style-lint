@@ -74,7 +74,7 @@ def check_paragraph(
     joined = strip_inline_code(strip_link_urls(joined_raw))
     joined_lower = joined.lower()
 
-    if "?" in joined and not allow_questions:
+    if "?" in strip_double_quoted(joined) and not allow_questions:
         findings.append(
             Finding(
                 rel,

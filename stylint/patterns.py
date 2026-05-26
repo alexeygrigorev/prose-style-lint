@@ -56,10 +56,12 @@ LABEL_COLON_OPENER_RE = re.compile(
 SHORT_LABEL_COLON_RE = re.compile(
     r"^[A-Z][A-Za-z'-]+(?:\s+[A-Za-z][A-Za-z'-]+){1,2}:\s*$"
 )
-# Single-word labels that work as callout / admonition blocks. Only
-# `Note:` and `Important:` are exempt - other words ("Tip", "Warning",
-# "Notice", etc.) read as ad-hoc labels and the rule still flags them.
-CALLOUT_LABELS = frozenset({"note", "important"})
+# Single-word labels that work as callout / admonition blocks. `Note:`
+# and `Important:` are the classic admonitions; `Video:` and `Code:`
+# are common in lesson READMEs ("Video: <link>", "Code: [code/](code/)")
+# and read as resource pointers, not prose labels. Other words read as
+# ad-hoc labels and the rule still flags them.
+CALLOUT_LABELS = frozenset({"note", "important", "video", "code"})
 # Filler sentence-openers: "Now", "Let's", "Let us". Fine in moderation;
 # overuse signals lazy transitions. Counted at file scope: flagged only
 # when there are too many in a single document.
